@@ -28,7 +28,7 @@ class MultiCurl
      */
     protected $defaultCurlSettings = array(
         CURLOPT_RETURNTRANSFER  => 1,       // needed to get the response
-        CURLOPT_SSL_VERIFYPEER  => false,   // do not verify ssl peer, used to skip some frequent errors, but makes the requests more vulnerable to MIT attack
+        CURLOPT_SSL_VERIFYPEER  => false,   // do not verify ssl peer, used to skip some frequent errors, but makes the requests more vulnerable to MITM attack
         CURLOPT_CONNECTTIMEOUT  => 60,      // connection timeout in seconds
         CURLOPT_TIMEOUT         => 60,      // response timeout in seconds
         CURLOPT_FOLLOWLOCATION  => true,    // follow redirections
@@ -156,10 +156,7 @@ class MultiCurl
             curl_multi_exec($multiCurlHandler, $active);
 
             // wait for response
-            if (curl_multi_select($multiCurlHandler) == 0) {
-                // for safety, break when curl lib doesn't see any thread in progress
-                break;
-            }
+            curl_multi_select($multiCurlHandler);
 
     		// check if any curl handle finished
 			$info = curl_multi_info_read($multiCurlHandler);

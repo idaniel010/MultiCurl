@@ -238,7 +238,7 @@ class MultiCurl
                     }
                 }
             }
-		} while (count($runningConns) > 0); // there are still curl handlers to process
+	} while (count($runningConns) > 0); // there are still curl handlers to process
 
         return $requests;
     }

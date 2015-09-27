@@ -2,7 +2,7 @@
 
 /**
  * This class runs concurent curl connection according to a pool size.
- * It takes an array describing all the curl requests and curl settings and runs the requests in parallel according to the pool size.
+ * It takes an array describing all the curl requests (with post, get params and curl settings) and runs the requests in parallel according to the pool size.
  *
  * @author Daniel Ionita
  * @version 0.1 simply run concurent curl connection according to a pool size and custom curl settings set for individual requests or for all requests.

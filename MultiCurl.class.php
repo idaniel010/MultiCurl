@@ -114,14 +114,16 @@ class MultiCurl
 
         // make sure the concurent connection fit the requests count
         if ($this->connectionsPoolSize > $requestCount) {
-        	$this->connectionsPoolSize = $requestCount;
+        	$connectionsPoolSize = $requestCount;
+        } else {
+            $connectionsPoolSize = $this->connectionsPoolSize;
         }
 
         // set the array pointer to the first position
         reset($requests);
 
         // add curls to the start line
-        for ($i = 0 ; $i < $this->connectionsPoolSize ; $i++) {
+        for ($i = 0 ; $i < $connectionsPoolSize ; $i++) {
             // get the current element of the array and set the pointer to the next one
             $currentElement = each($requests);
             $currentConnKey = $currentElement['key'];
@@ -146,9 +148,6 @@ class MultiCurl
 	        	}
 	        }
         }
-
-        // keep track for the next curl connection to use when a new connection is released
-        $nextCurlConnIndex = $this->connectionsPoolSize;
 
         // start execute the curls and also add more connections when a connection is finished
         do {

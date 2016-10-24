@@ -90,10 +90,11 @@ class MultiCurl
      * Prepares and make multicurls based on request
      *
      * @param array $request - list of sub-arrays: array('url', 'get' or 'post', 'curl_settings')
-     *
+     * @param boolean $releaseInputData - optional, default = false, releases the post, get and curl_settings keys from result
+     * 
      * @return $response - array is the same list given as input, but with 'response' and 'status' fields added to each sub-array
      */
-    public function processRequests($requests = array())
+    public function processRequests($requests = array(), $releaseInputData = false)
     {
     	if (empty($requests) || !is_array($requests)) {
             return false;
@@ -119,6 +120,15 @@ class MultiCurl
             $connectionsPoolSize = $this->connectionsPoolSize;
         }
 
+        // for php 5.5 or greater
+        if (function_exists('curl_multi_setopt')) {
+            // if you add a second request that can use an already existing connection, the second request will be "piped" on the same connection. 
+            curl_multi_setopt($multiCurlHandler, CURLMOPT_PIPELINING, 1);
+
+            // the maximum amount of simultaneously open connections that libcurl may cache.
+            curl_multi_setopt($multiCurlHandler, CURLMOPT_MAXCONNECTS, $connectionsPoolSize);
+        }
+
         // set the array pointer to the first position
         reset($requests);
 
@@ -132,6 +142,19 @@ class MultiCurl
         	if (!empty($requests[$currentConnKey]) && is_array($requests[$currentConnKey])) {
         		// add curl connection to stack and check for failure
         		$curlObject = $this->addCurlHandle($multiCurlHandler, $requests[$currentConnKey]);
+
+                // release memory
+                if ($releaseInputData === true) {
+                    if (isset($requests[$currentConnKey]['post'])) {
+                        unset($requests[$currentConnKey]['post']);
+                    }
+                    if (isset($requests[$currentConnKey]['get'])) {
+                        unset($requests[$currentConnKey]['get']);
+                    }
+                    if (isset($requests[$currentConnKey]['curl_settings'])) {
+                        unset($requests[$currentConnKey]['curl_settings']);
+                    }
+                }
 
 	        	if ($curlObject === false) {
                     // set status
@@ -208,6 +231,7 @@ class MultiCurl
                     // release memory
                     unset($info);
                     unset($requests[$resultIndex]['curl_handler']);
+
                 }
 
                 // get the current element of the array and set the pointer to the next elem
@@ -220,6 +244,19 @@ class MultiCurl
 
                     // add curl connection to pool and check for failure
                     $curlObject = $this->addCurlHandle($multiCurlHandler, $requests[$currentConnKey]);
+
+                    // release memory
+                    if ($releaseInputData === true) {
+                        if (isset($requests[$currentConnKey]['post'])) {
+                            unset($requests[$currentConnKey]['post']);
+                        }
+                        if (isset($requests[$currentConnKey]['get'])) {
+                            unset($requests[$currentConnKey]['get']);
+                        }
+                        if (isset($requests[$currentConnKey]['curl_settings'])) {
+                            unset($requests[$currentConnKey]['curl_settings']);
+                        }
+                    }
 
                     // check the curl object
                     if ($curlObject === false) {
@@ -239,7 +276,11 @@ class MultiCurl
             }
 	} while (count($runningConns) > 0); // there are still curl handlers to process
 
-        return $requests;
+    // close the multi curl object
+    curl_multi_close($multiCurlHandler);
+    unset($multiCurlHandler);
+
+    return $requests;
     }
 
     /**
